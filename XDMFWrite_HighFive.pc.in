@@ -3,5 +3,5 @@ includedir=${prefix}/include
 
 Name: @PROJECT_NAME@
 Description: Write VTK files based on HDF5 file
-Version: @VTKHIGHFIVE_VERSION@
+Version: @XDMFWRITE_HIGHFIVE_VERSION@
 Cflags: -I${includedir}
