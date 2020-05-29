@@ -1,0 +1,7 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/include
+
+Name: @PROJECT_NAME@
+Description: Write VTK files based on HDF5 file
+Version: @VTKHIGHFIVE_VERSION@
+Cflags: -I${includedir}
