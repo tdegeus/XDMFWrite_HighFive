@@ -28,16 +28,6 @@
 #define XDMFWRITE_HIGHFIVE_VERSION_MINOR 0
 #define XDMFWRITE_HIGHFIVE_VERSION_PATCH 1
 
-#define XDMFWRITE_HIGHFIVE_VERSION_AT_LEAST(x, y, z) \
-    (XDMFWRITE_HIGHFIVE_VERSION_MAJOR > x || (XDMFWRITE_HIGHFIVE_VERSION_MAJOR >= x && \
-    (XDMFWRITE_HIGHFIVE_VERSION_MINOR > y || (XDMFWRITE_HIGHFIVE_VERSION_MINOR >= y && \
-                                       XDMFWRITE_HIGHFIVE_VERSION_PATCH >= z))))
-
-#define XDMFWRITE_HIGHFIVE_VERSION(x, y, z) \
-    (XDMFWRITE_HIGHFIVE_VERSION_MAJOR == x && \
-     XDMFWRITE_HIGHFIVE_VERSION_MINOR == y && \
-     XDMFWRITE_HIGHFIVE_VERSION_PATCH == z)
-
 #ifndef XDMFWRITE_HIGHFIVE_INDENT
 #define XDMFWRITE_HIGHFIVE_INDENT 4
 #endif
@@ -53,60 +43,162 @@ namespace XDMFWrite_HighFive {
 
 // --- Overview ---
 
+/**
+* Returns a string in which the string elements of a sequence have been joined by a separator.
+* @param lines Sequence of strings.
+* @param sep Separator with which to join the lines.
+* @return String.
+*/
+inline std::string join(const std::vector<std::string>& lines, const std::string& sep="\n");
+
+/**
+* Specify the ElementType for a certain Topology (a.k.a. connectivity).
+*/
 enum class ElementType {
     Triangle,
     Quadrilateral,
     Hexahedron };
 
+/**
+* Specify the AttributeType of a field.
+*/
 enum class AttributeType {
     Cell,
     Node };
 
-inline auto Geometry(
+/**
+* Interpret a DataSet as a Geometry (a.k.a. nodes or vertices).
+* @param file A open and readable HighFive file.
+* @param dataset Path to the DatSet.
+* @return Sequence of strings to be used in a XDMF-file.
+*/
+inline std::vector<std::string> Geometry(
     const HighFive::File& file,
     const std::string& dataset);
 
+/**
+* Interpret a DataSet as a Topology (a.k.a. connectivity).
+* @param file A open and readable HighFive file.
+* @param dataset Path to the DatSet.
+* @param type The type of elements (see ElementType)
+* @return Sequence of strings to be used in a XDMF-file.
+*/
 template <class T>
-inline auto Topology(
+inline std::vector<std::string> Topology(
     const HighFive::File& file,
     const std::string& dataset,
     const T& type);
 
-inline auto Attribute(
+/**
+* Interpret a DataSet as an Attribute. By default the path of the DataSet is used as name in the
+* XDMF-file. An overload is available to specify a different name.
+* @param file A open and readable HighFive file.
+* @param dataset Path to the DatSet.
+* @param type The type of Attribute (see AttributeType)
+* @return Sequence of strings to be used in a XDMF-file.
+*/
+template <class T>
+inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
-    AttributeType type);
+    const T& type);
 
+/**
+* Interpret a DataSet as an Attribute.
+* @param file A open and readable HighFive file.
+* @param dataset Path to the DatSet.
+* @param type The type of Attribute (see AttributeType)
+* @param name Name to use in the XDFM-file.
+* @return Sequence of strings to be used in a XDMF-file.
+*/
 template <class T>
-inline auto Attribute(
+inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
     const T& type,
     const std::string &name);
 
-inline auto Grid(
+/**
+* Combine fields (e.g. Geometry, Topology, and Attribute) to a single grid.
+* @param name Name of the grid.
+* @param args The fields (themselves a sequence of strings) to write.
+* An arbitrary number if string sequences can be combined using {...}.
+* @return Sequence of strings to be used in a XDMF-file.
+*/
+inline std::vector<std::string> Grid(
     const std::string& name,
     std::initializer_list<std::vector<std::string>> args);
 
-inline auto Grid(
+/**
+* Combine fields (e.g. Geometry, Topology, and Attribute) to a single grid.
+* An overload is available to specify the name.
+* @param args The fields (themselves a sequence of strings) to write.
+* An arbitrary number if string sequences can be combined using {...}.
+* @return Sequence of strings to be used in a XDMF-file.
+*/
+inline std::vector<std::string> Grid(
     std::initializer_list<std::vector<std::string>> args);
 
+/**
+* Combine a series of fields (e.g. Geometry, Topology, and Attribute) to a time-series
+*/
 class TimeSeries
 {
 public:
+
+    /**
+    * Constructor.
+    * An overload is available to specify the name of the TimeSeries.
+    */
     TimeSeries() = default;
+
+    /**
+    * Constructor, allowing a custom name of the TimeSeries.
+    * @param name Name of the TimeSeries.
+    */
     TimeSeries(const std::string& name);
 
+    /**
+    * Add a time-step given by a combination of fields (e.g. Geometry, Topology, and Attribute).
+    * @param name Name of the increment.
+    * @param time Time value of the increment.
+    * @param args The fields (themselves a sequence of strings) to write.
+    * An arbitrary number if string sequences can be combined using {...}.
+    */
     template <class T>
     inline void push_back(
         const std::string& name,
         const T& time,
         std::initializer_list<std::vector<std::string>> args);
 
+    /**
+    * Add a time-step given by a combination of fields (e.g. Geometry, Topology, and Attribute).
+    * An overload is available to specify the time and name of the increment.
+    * @param time Time value of the increment.
+    * @param args The fields (themselves a sequence of strings) to write.
+    * An arbitrary number if string sequences can be combined using {...}.
+    */
+    template <class T>
+    inline void push_back(
+        const T& time,
+        std::initializer_list<std::vector<std::string>> args);
+
+    /**
+    * Add a time-step given by a combination of fields (e.g. Geometry, Topology, and Attribute).
+    * An overload is available to specify the time and name of the increment.
+    * @param args The fields (themselves a sequence of strings) to write.
+    * An arbitrary number if string sequences can be combined using {...}.
+    * @return Sequence of strings to be used in a XDMF-file.
+    */
     inline void push_back(
         std::initializer_list<std::vector<std::string>> args);
 
-    inline auto get() const;
+
+    /**
+    * Get sequence of strings to be used in a XDMF-file.
+    * @return Sequence of strings to be used in a XDMF-file.
+    */
+    inline std::vector<std::string> get() const;
 
 private:
     std::vector<std::string> m_lines;
@@ -114,11 +206,23 @@ private:
     size_t m_n = 0;
 };
 
+
+/**
+* Get a complete XDMF-file, e.g. from Grid or TimeSeries.
+* @param arg The data (any of the XDMFWrite_HighFive-classes or a sequence of strings) to write.
+* @return XDMF-file as string.
+*/
 template <class T>
 inline std::string write(const T& arg);
 
+/**
+* Write a complete XDMF-file, e.g. from Grid or TimeSeries.
+* @param filename The filename to write to (file is overwritten).
+* @param arg The data (any of the XDMFWrite_HighFive-classes or a sequence of strings) to write.
+* @return XDMF-file as string.
+*/
 template <class T>
-inline std::string write(const std::string& fname, const T& arg);
+inline std::string write(const std::string& filename, const T& arg);
 
 // --- Implementation ---
 
@@ -333,7 +437,7 @@ namespace detail {
 
 } // namespace detail
 
-inline std::string join(const std::vector<std::string>& lines, const std::string& sep="\n")
+inline std::string join(const std::vector<std::string>& lines, const std::string& sep)
 {
     if (lines.size() == 1) {
         return lines[0];
@@ -361,7 +465,7 @@ inline std::string join(const std::vector<std::string>& lines, const std::string
     return ret;
 }
 
-inline auto Geometry(
+inline std::vector<std::string> Geometry(
     const HighFive::File& file,
     const std::string& dataset)
 {
@@ -389,13 +493,13 @@ inline auto Geometry(
         std::to_string(shape[1]) + "\" Format=\"HDF\">" + fname + ":" + dataset +
         "</DataItem>");
 
-    ret.push_back("</Geometry>)");
+    ret.push_back("</Geometry>");
 
     return ret;
 }
 
 template <class T>
-inline auto Topology(
+inline std::vector<std::string> Topology(
     const HighFive::File& file,
     const std::string& dataset,
     const T& type)
@@ -422,7 +526,7 @@ inline auto Topology(
 }
 
 template <class T>
-inline auto Attribute(
+inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
     const T& type,
@@ -455,20 +559,21 @@ inline auto Attribute(
             "</DataItem>");
     }
 
-    ret.push_back("</Attribute>)");
+    ret.push_back("</Attribute>");
 
     return ret;
 }
 
-inline auto Attribute(
+template <class T>
+inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
-    AttributeType type)
+    const T& type)
 {
     return Attribute(file, dataset, type, dataset);
 }
 
-inline auto Grid(
+inline std::vector<std::string> Grid(
     const std::string& name,
     std::initializer_list<std::vector<std::string>> args)
 {
@@ -485,7 +590,7 @@ inline auto Grid(
     return ret;
 }
 
-inline auto Grid(std::initializer_list<std::vector<std::string>> args)
+inline std::vector<std::string> Grid(std::initializer_list<std::vector<std::string>> args)
 {
     return Grid("Grid", args);
 }
@@ -512,13 +617,21 @@ inline void TimeSeries::push_back(
     m_n++;
 }
 
+template <class T>
+inline void TimeSeries::push_back(
+    const T& time,
+    std::initializer_list<std::vector<std::string>> args)
+{
+    return this->push_back("Increment " + std::to_string(m_n), time, args);
+}
+
 inline void TimeSeries::push_back(
     std::initializer_list<std::vector<std::string>> args)
 {
     return this->push_back("Increment " + std::to_string(m_n), m_n, args);
 }
 
-inline auto TimeSeries::get() const
+inline std::vector<std::string> TimeSeries::get() const
 {
     std::vector<std::string> ret;
     ret.push_back(
