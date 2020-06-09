@@ -1,3 +1,6 @@
+[![Travis](https://travis-ci.org/tdegeus/XDMFWrite_HighFive.svg?branch=master)](https://travis-ci.org/tdegeus/XDMFWrite_HighFive)
+[![Appveyor](https://ci.appveyor.com/api/projects/status/oacto3abj9ttbr6i?svg=true)](https://ci.appveyor.com/project/tdegeus/xdmfwrite-highfive)
+
 # XDMFWrite_HighFive
 
 <!-- MarkdownTOC -->
