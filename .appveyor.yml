@@ -33,6 +33,7 @@ install:
   - conda update -q conda
   - conda info -a
   - conda install -c conda-forge cmake
+  - conda install -c conda-forge highfive
   - conda install -c conda-forge xtensor
   - conda install -c conda-forge catch2
   # Build/install the library
