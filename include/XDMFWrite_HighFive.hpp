@@ -29,7 +29,7 @@
 #define XDMFWRITE_HIGHFIVE_VERSION_PATCH 1
 
 #ifndef XDMFWRITE_HIGHFIVE_INDENT
-#define XDMFWRITE_HIGHFIVE_INDENT 4
+    #define XDMFWRITE_HIGHFIVE_INDENT 4
 #endif
 
 #ifndef XDMFWRITE_USE_GOOSEFEM
@@ -52,25 +52,34 @@ namespace XDMFWrite_HighFive {
 inline std::string join(const std::vector<std::string>& lines, const std::string& sep="\n");
 
 /**
+* Concatenate lists.
+* @param args Lists, specified as {...}.
+* @return Concatenated list.
+*/
+template <class T>
+inline std::vector<T> concatenate(std::initializer_list<std::vector<T>> args);
+
+/**
 * Specify the ElementType for a certain Topology (a.k.a. connectivity).
 */
 enum class ElementType {
+    Polyvertex,
     Triangle,
     Quadrilateral,
     Hexahedron };
 
 /**
-* Specify the AttributeType of a field.
+* Specify the AttributeCenter of a field.
 */
-enum class AttributeType {
+enum class AttributeCenter {
     Cell,
     Node };
 
 /**
-* Interpret a DataSet as a Geometry (a.k.a. nodes or vertices).
-* @param file A open and readable HighFive file.
-* @param dataset Path to the DatSet.
-* @return Sequence of strings to be used in a XDMF-file.
+* Interpret a DataSet as a Geometry (a.k.a. nodal-coordinates or vertices).
+* @param file An open and readable HighFive file.
+* @param dataset Path to the DataSet.
+* @return Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Geometry(
     const HighFive::File& file,
@@ -78,10 +87,10 @@ inline std::vector<std::string> Geometry(
 
 /**
 * Interpret a DataSet as a Topology (a.k.a. connectivity).
-* @param file A open and readable HighFive file.
-* @param dataset Path to the DatSet.
-* @param type The type of elements (see ElementType)
-* @return Sequence of strings to be used in a XDMF-file.
+* @param file An open and readable HighFive file.
+* @param dataset Path to the DataSet.
+* @param type Element-type (see ElementType).
+* @return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Topology(
@@ -92,38 +101,38 @@ inline std::vector<std::string> Topology(
 /**
 * Interpret a DataSet as an Attribute. By default the path of the DataSet is used as name in the
 * XDMF-file. An overload is available to specify a different name.
-* @param file A open and readable HighFive file.
-* @param dataset Path to the DatSet.
-* @param type The type of Attribute (see AttributeType)
-* @return Sequence of strings to be used in a XDMF-file.
+* @param file An open and readable HighFive file.
+* @param dataset Path to the DataSet.
+* @param center How to center the Attribute (see AttributeCenter).
+* @return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
-    const T& type);
+    const T& center);
 
 /**
 * Interpret a DataSet as an Attribute.
-* @param file A open and readable HighFive file.
-* @param dataset Path to the DatSet.
-* @param type The type of Attribute (see AttributeType)
-* @param name Name to use in the XDFM-file.
-* @return Sequence of strings to be used in a XDMF-file.
+* @param file An open and readable HighFive file.
+* @param dataset Path to the DataSet.
+* @param center How to center the Attribute (see AttributeCenter).
+* @param name Name to use in the XDMF-file.
+* @return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
-    const T& type,
+    const T& center,
     const std::string &name);
 
 /**
 * Combine fields (e.g. Geometry, Topology, and Attribute) to a single grid.
 * @param name Name of the grid.
 * @param args The fields (themselves a sequence of strings) to write.
-* An arbitrary number if string sequences can be combined using {...}.
-* @return Sequence of strings to be used in a XDMF-file.
+* An arbitrary number of string sequences can be combined using {...}.
+* @return Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Grid(
     const std::string& name,
@@ -134,13 +143,13 @@ inline std::vector<std::string> Grid(
 * An overload is available to specify the name.
 * @param args The fields (themselves a sequence of strings) to write.
 * An arbitrary number if string sequences can be combined using {...}.
-* @return Sequence of strings to be used in a XDMF-file.
+* @return Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Grid(
     std::initializer_list<std::vector<std::string>> args);
 
 /**
-* Combine a series of fields (e.g. Geometry, Topology, and Attribute) to a time-series
+* Combine a series of fields (e.g. Geometry, Topology, and Attribute) to a time-series.
 */
 class TimeSeries
 {
@@ -188,15 +197,15 @@ public:
     * An overload is available to specify the time and name of the increment.
     * @param args The fields (themselves a sequence of strings) to write.
     * An arbitrary number if string sequences can be combined using {...}.
-    * @return Sequence of strings to be used in a XDMF-file.
+    * @return Sequence of strings to be used in an XDMF-file.
     */
     inline void push_back(
         std::initializer_list<std::vector<std::string>> args);
 
 
     /**
-    * Get sequence of strings to be used in a XDMF-file.
-    * @return Sequence of strings to be used in a XDMF-file.
+    * Get sequence of strings to be used in an XDMF-file.
+    * @return Sequence of strings to be used in an XDMF-file.
     */
     inline std::vector<std::string> get() const;
 
@@ -206,6 +215,37 @@ private:
     size_t m_n = 0;
 };
 
+/**
+* Interpret a DataSets as a Structured (individual points). This is simply short for the
+* concatenation of `Geometry(file, "/coor")` and
+* `Topology(file, "/conn", ElementType::Polyvertex)`.
+* @param file An open and readable HighFive file.
+* @param dataset_geometry Path to the Geometry DataSet.
+* @param dataset_topology Path to a mock Topology arange(N), with N the number of nodes (vertices).
+* @return Sequence of strings to be used in an XDMF-file.
+*/
+inline std::vector<std::string> Structured(
+    const HighFive::File& file,
+    const std::string& dataset_geometry,
+    const std::string& dataset_topology);
+
+/**
+* Interpret a DataSets as a Unstructured
+* (Geometry and Topology / nodal-coordinates and connectivity). This is simply short for the
+* concatenation of `Geometry(file, "/coor")` and
+* `Topology(file, "/conn", type)`.
+* @param file An open and readable HighFive file.
+* @param dataset_geometry Path to the Geometry DataSet.
+* @param dataset_topology Path to the Topology DataSet.
+* @param type Element-type (see ElementType).
+* @return Sequence of strings to be used in an XDMF-file.
+*/
+template <class T>
+inline std::vector<std::string> Unstructured(
+    const HighFive::File& file,
+    const std::string& dataset_geometry,
+    const std::string& dataset_topology,
+    const T& type);
 
 /**
 * Get a complete XDMF-file, e.g. from Grid or TimeSeries.
@@ -228,6 +268,7 @@ inline std::string write(const std::string& filename, const T& arg);
 
 namespace detail {
 
+    // SFINAE helper: check if a template argument is a string
     template <class T>
     struct is_string : std::false_type
     {
@@ -238,6 +279,7 @@ namespace detail {
     {
     };
 
+    // SFINAE helper: check if a template argument is a list of strings
     template <class T>
     struct is_string_list : std::false_type
     {
@@ -248,6 +290,7 @@ namespace detail {
     {
     };
 
+    // SFINAE helper: check if a template argument is an ElementType enum-class.
     template <class T>
     struct is_ElementType : std::false_type
     {
@@ -258,16 +301,18 @@ namespace detail {
     {
     };
 
+    // SFINAE helper: check if a template argument is an AttributeCenter enum-class.
     template <class T>
-    struct is_AttributeType : std::false_type
+    struct is_AttributeCenter : std::false_type
     {
     };
 
     template <>
-    struct is_AttributeType<AttributeType> : std::true_type
+    struct is_AttributeCenter<AttributeCenter> : std::true_type
     {
     };
 
+    // SFINAE helper: check if a template argument is an GooseFEM-ElementType enum-class.
     #ifdef XDMFWRITE_USE_GOOSEFEM
     template <class T>
     struct is_GooseFEM_ElementType : std::false_type
@@ -280,7 +325,7 @@ namespace detail {
     };
     #endif
 
-
+    // Convert object to string
     template <class T, typename = void>
     struct to
     {
@@ -304,7 +349,10 @@ namespace detail {
     {
         static std::string str(const T& arg)
         {
-            if (arg == ElementType::Triangle) {
+            if (arg == ElementType::Polyvertex) {
+                return "Polyvertex";
+            }
+            else if (arg == ElementType::Triangle) {
                 return "Triangle";
             }
             else if (arg == ElementType::Quadrilateral) {
@@ -338,19 +386,29 @@ namespace detail {
     #endif
 
     template <class T>
-    struct to<T, typename std::enable_if_t<is_AttributeType<T>::value>>
+    struct to<T, typename std::enable_if_t<is_AttributeCenter<T>::value>>
     {
         static std::string str(const T& arg)
         {
-            if (arg == AttributeType::Cell) {
+            if (arg == AttributeCenter::Cell) {
                 return "Cell";
             }
-            else if (arg == AttributeType::Node) {
+            else if (arg == AttributeCenter::Node) {
                 return "Node";
             }
             throw std::runtime_error("Unknown AttributeType");
         }
     };
+
+    template <class T>
+    inline std::string join_as_string(const std::vector<T>& arg, std::string sep)
+    {
+        std::vector<std::string> ret;
+        for (auto& i : arg) {
+            ret.push_back(to<T>::str(i));
+        }
+        return join(ret, sep);
+    }
 
     template <class T, typename = void>
     struct convert
@@ -370,18 +428,25 @@ namespace detail {
         }
     };
 
-    inline size_t number_of_columns(ElementType type)
+    template <class T>
+    inline bool check_shape(const T& shape, ElementType type)
     {
-        if (type == ElementType::Triangle) {
-            return 3;
+        if (shape.size() == 1 && type == ElementType::Polyvertex) {
+            return true;
         }
-        else if (type == ElementType::Quadrilateral) {
-            return 4;
+        if (shape.size() != 2) {
+            return false;
         }
-        else if (type == ElementType::Hexahedron) {
-            return 8;
+        if (shape[1] == 3 && type == ElementType::Triangle) {
+            return true;
         }
-        throw std::runtime_error("Unknown ElementType");
+        if (shape[1] == 4 && type == ElementType::Quadrilateral) {
+            return true;
+        }
+        if (shape[1] == 8 && type == ElementType::Hexahedron) {
+            return true;
+        }
+        return false;
     }
 
     inline std::string indent()
@@ -465,6 +530,21 @@ inline std::string join(const std::vector<std::string>& lines, const std::string
     return ret;
 }
 
+template <class T>
+inline std::vector<T> concatenate(std::initializer_list<std::vector<T>> args)
+{
+    size_t n = 0;
+    for (auto& arg : args) {
+        n += arg.size();
+    }
+    std::vector<T> ret;
+    ret.reserve(n);
+    for (auto& arg : args) {
+        ret.insert(ret.end(), arg.begin(), arg.end());
+    }
+    return ret;
+}
+
 inline std::vector<std::string> Geometry(
     const HighFive::File& file,
     const std::string& dataset)
@@ -508,16 +588,15 @@ inline std::vector<std::string> Topology(
     auto shape = H5Easy::getShape(file, dataset);
     auto fname = file.getName();
 
-    XDMFWRITE_HIGHFIVE_ASSERT(shape.size() == 2);
-    XDMFWRITE_HIGHFIVE_ASSERT(shape[1] == detail::number_of_columns(type));
+    XDMFWRITE_HIGHFIVE_ASSERT(detail::check_shape(shape, type));
 
     ret.push_back(
         "<Topology NumberOfElements=\"" + std::to_string(shape[0]) + "\" TopologyType=\"" +
         detail::to<T>::str(type) + "\">");
 
     ret.push_back(
-        detail::indent() + "<DataItem Dimensions=\"" + std::to_string(shape[0]) + " " +
-        std::to_string(shape[1]) + "\" Format=\"HDF\">" + fname + ":" + dataset +
+        detail::indent() + "<DataItem Dimensions=\"" + detail::join_as_string(shape, " ") +
+        "\" Format=\"HDF\">" + fname + ":" + dataset +
         "</DataItem>");
 
     ret.push_back("</Topology>");
@@ -525,11 +604,38 @@ inline std::vector<std::string> Topology(
     return ret;
 }
 
+inline std::vector<std::string> Structured(
+    const HighFive::File& file,
+    const std::string& dataset_geometry,
+    const std::string& dataset_topology)
+{
+    auto shape_geometry = H5Easy::getShape(file, dataset_geometry);
+    auto shape_topology = H5Easy::getShape(file, dataset_topology);
+
+    XDMFWRITE_HIGHFIVE_ASSERT(shape_geometry[0] == shape_topology[0]);
+
+    return concatenate({
+        Geometry(file, dataset_geometry),
+        Topology(file, dataset_topology, ElementType::Polyvertex)});
+}
+
+template <class T>
+inline std::vector<std::string> Unstructured(
+    const HighFive::File& file,
+    const std::string& dataset_geometry,
+    const std::string& dataset_topology,
+    const T& type)
+{
+    return concatenate({
+        Geometry(file, dataset_geometry),
+        Topology(file, dataset_topology, type)});
+}
+
 template <class T>
 inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
-    const T& type,
+    const T& center,
     const std::string &name)
 {
     std::vector<std::string> ret;
@@ -539,25 +645,24 @@ inline std::vector<std::string> Attribute(
     XDMFWRITE_HIGHFIVE_ASSERT(shape.size() > 0);
     XDMFWRITE_HIGHFIVE_ASSERT(shape.size() < 3);
 
+    std::string t;
     if (shape.size() == 1) {
-        ret.push_back(
-            "<Attribute AttributeType=\"Scalar\" Center=\"" + detail::to<T>::str(type) +
-            "\" Name=\"" + name + "\">");
-
-        ret.push_back(
-            detail::indent() + "<DataItem Dimensions=\"" + std::to_string(shape[0]) +
-            "\" Format=\"HDF\">" + fname + ":" + dataset + "</DataItem>");
+        t = "Scalar";
     }
     else if (shape.size() == 2) {
-        ret.push_back(
-            "<Attribute AttributeType=\"Vector\" Center=\"" + detail::to<T>::str(type) +
-            "\" Name=\"" + name + "\">");
-
-        ret.push_back(
-            detail::indent() + "<DataItem Dimensions=\"" + std::to_string(shape[0]) + " " +
-            std::to_string(shape[1]) + "\" Format=\"HDF\">" + fname + ":" + dataset +
-            "</DataItem>");
+        t = "Vector";
     }
+    else {
+        throw std::runtime_error("Type of data cannot be deduced");
+    }
+
+    ret.push_back(
+        "<Attribute AttributeType=\"" + t + "\" Center=\"" + detail::to<T>::str(center) +
+        "\" Name=\"" + name + "\">");
+
+    ret.push_back(
+        detail::indent() + "<DataItem Dimensions=\"" + detail::join_as_string(shape, " ") +
+        "\" Format=\"HDF\">" + fname + ":" + dataset + "</DataItem>");
 
     ret.push_back("</Attribute>");
 
@@ -568,9 +673,9 @@ template <class T>
 inline std::vector<std::string> Attribute(
     const HighFive::File& file,
     const std::string& dataset,
-    const T& type)
+    const T& center)
 {
-    return Attribute(file, dataset, type, dataset);
+    return Attribute(file, dataset, center, dataset);
 }
 
 inline std::vector<std::string> Grid(
@@ -586,7 +691,7 @@ inline std::vector<std::string> Grid(
     }
     ret.push_back("</Grid>");
     ret.push_back("</Grid>");
-    detail::indent(3, ret, 2, ret.size() - 2);
+    detail::indent(2, ret, 2, ret.size() - 2);
     return ret;
 }
 
