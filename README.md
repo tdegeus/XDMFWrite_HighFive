@@ -24,7 +24,7 @@
 
 <!-- /MarkdownTOC -->
 
-VTK meets HighFive: Write XDMF files to interpret HDF5 files.
+XDMF meets HighFive: Write XDMF files to interpret HDF5 files.
 
 ## Fields
 
