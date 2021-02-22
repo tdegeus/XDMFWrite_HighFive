@@ -510,6 +510,11 @@ namespace detail {
             }
             throw XDMFWRITE_HIGHFIVE_THROW("Unknown ElementType");
         }
+
+        static ElementType type(const T& arg)
+        {
+            return arg;
+        }
     };
 
     #ifdef XDMFWRITE_USE_GOOSEFEM
@@ -526,6 +531,20 @@ namespace detail {
             }
             else if (arg == GooseFEM::Mesh::ElementType::Hex8) {
                 return "Hexahedron";
+            }
+            throw XDMFWRITE_HIGHFIVE_THROW("Unknown ElementType");
+        }
+
+        static ElementType type(const T& arg)
+        {
+            if (arg == GooseFEM::Mesh::ElementType::Tri3) {
+                return ElementType::Triangle;
+            }
+            else if (arg == GooseFEM::Mesh::ElementType::Quad4) {
+                return ElementType::Quadrilateral;
+            }
+            else if (arg == GooseFEM::Mesh::ElementType::Hex8) {
+                return ElementType::Hexahedron;
             }
             throw XDMFWRITE_HIGHFIVE_THROW("Unknown ElementType");
         }
@@ -575,22 +594,24 @@ namespace detail {
         }
     };
 
-    template <class T>
-    inline bool check_shape(const T& shape, ElementType type)
+    template <class T, class E>
+    inline bool check_shape(const T& shape, E type)
     {
-        if (shape.size() == 1 && type == ElementType::Polyvertex) {
+        auto t = detail::to<E>::type(type);
+
+        if (shape.size() == 1 && t == ElementType::Polyvertex) {
             return true;
         }
         if (shape.size() != 2) {
             return false;
         }
-        if (shape[1] == 3 && type == ElementType::Triangle) {
+        if (shape[1] == 3 && t == ElementType::Triangle) {
             return true;
         }
-        if (shape[1] == 4 && type == ElementType::Quadrilateral) {
+        if (shape[1] == 4 && t == ElementType::Quadrilateral) {
             return true;
         }
-        if (shape[1] == 8 && type == ElementType::Hexahedron) {
+        if (shape[1] == 8 && t == ElementType::Hexahedron) {
             return true;
         }
         return false;
