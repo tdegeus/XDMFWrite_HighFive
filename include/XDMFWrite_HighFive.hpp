@@ -111,9 +111,9 @@ To change the default to e.g. 2::
     #define XDMFWRITE_HIGHFIVE_INDENT 4
 #endif
 
-#ifndef XDMFWRITE_USE_XDMFWRITE_HIGHFIVE
+#ifndef XDMFWRITE_HIGHFIVE_USE_GOOSEFEM
     #ifdef GOOSEFEM_VERSION
-        #define XDMFWRITE_USE_GOOSEFEM
+        #define XDMFWRITE_HIGHFIVE_USE_GOOSEFEM
         #include <GooseFEM/Mesh.h>
     #endif
 #endif
@@ -460,7 +460,7 @@ namespace detail {
     };
 
     // SFINAE helper: check if a template argument is an GooseFEM-ElementType enum-class.
-    #ifdef XDMFWRITE_USE_GOOSEFEM
+    #ifdef XDMFWRITE_HIGHFIVE_USE_GOOSEFEM
     template <class T>
     struct is_GooseFEM_ElementType : std::false_type
     {
@@ -517,7 +517,7 @@ namespace detail {
         }
     };
 
-    #ifdef XDMFWRITE_USE_GOOSEFEM
+    #ifdef XDMFWRITE_HIGHFIVE_USE_GOOSEFEM
     template <class T>
     struct to<T, typename std::enable_if_t<is_GooseFEM_ElementType<T>::value>>
     {
