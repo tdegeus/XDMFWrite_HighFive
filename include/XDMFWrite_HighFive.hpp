@@ -15,8 +15,26 @@ References:
 #include <fstream>
 #include <highfive/H5Easy.hpp>
 
+/**
+\cond
+*/
 #define Q(x) #x
 #define QUOTE(x) Q(x)
+
+#define XDMFWRITE_HIGHFIVE_ASSERT_IMPL(expr, file, line) \
+    if (!(expr)) { \
+        throw std::runtime_error( \
+            std::string(file) + ':' + std::to_string(line) + \
+            ": assertion failed (" #expr ") \n\t"); \
+    }
+
+#define XDMFWRITE_HIGHFIVE_THROW_IMPL(message, file, line) \
+    std::runtime_error( \
+        std::string(file) + ':' + std::to_string(line) + \
+        ": " message " \n\t"); \
+/**
+\endcond
+*/
 
 /**
 All assertions are implementation as::
@@ -38,43 +56,25 @@ The advantage is that:
 */
 #ifdef XDMFWRITE_HIGHFIVE_ENABLE_ASSERT
     #define XDMFWRITE_HIGHFIVE_ASSERT(expr) XDMFWRITE_HIGHFIVE_ASSERT_IMPL(expr, __FILE__, __LINE__)
-    #define XDMFWRITE_HIGHFIVE_ASSERT_IMPL(expr, file, line) \
-        if (!(expr)) { \
-            throw std::runtime_error( \
-                std::string(file) + ':' + std::to_string(line) + \
-                ": assertion failed (" #expr ") \n\t"); \
-        }
 #else
     #define XDMFWRITE_HIGHFIVE_ASSERT(expr)
 #endif
 
 /**
-Assertion that cannot be switched of. Implement assertion by::
+Assertion that cannot be switched off. Implement assertion by::
 
     XDMFWRITE_HIGHFIVE_CHECK(...)
 
 \throw std::runtime_error
 */
-#define XDMFWRITE_HIGHFIVE_CHECK(expr) XDMFWRITE_HIGHFIVE_CHECK_IMPL(expr, __FILE__, __LINE__)
-#define XDMFWRITE_HIGHFIVE_CHECK_IMPL(expr, file, line) \
-    if (!(expr)) { \
-        throw std::runtime_error( \
-            std::string(file) + ':' + std::to_string(line) + \
-            ": assertion failed (" #expr ") \n\t"); \
-    }
+#define XDMFWRITE_HIGHFIVE_CHECK(expr) XDMFWRITE_HIGHFIVE_ASSERT_IMPL(expr, __FILE__, __LINE__)
 
 /**
-Throw error::
+Throw error such that the source-file and line-number are added::
 
-    XDMFWRITE_HIGHFIVE_THROW(...)
-
-\throw std::runtime_error
+    throw XDMFWRITE_HIGHFIVE_THROW(...)
 */
 #define XDMFWRITE_HIGHFIVE_THROW(message) XDMFWRITE_HIGHFIVE_THROW_IMPL(message, __FILE__, __LINE__)
-#define XDMFWRITE_HIGHFIVE_THROW_IMPL(message, file, line) \
-    std::runtime_error( \
-        std::string(file) + ':' + std::to_string(line) + \
-        ": " message " \n\t"); \
 
 /**
 Current version.
