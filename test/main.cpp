@@ -2,7 +2,7 @@
 #define CATCH_CONFIG_MAIN  // tells Catch to provide a main() - only do this in one cpp file
 #include <catch2/catch.hpp>
 #include <GooseFEM/GooseFEM.h>
-#include <HighFive/H5Easy.hpp>
+#include <highfive/H5Easy.hpp>
 
 #define XDMFWRITE_HIGHFIVE_INDENT 0
 #include <XDMFWrite_HighFive.hpp>
