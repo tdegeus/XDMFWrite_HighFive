@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  standard:
+
+    strategy:
+
+      fail-fast: false
+
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    name: "${{ matrix.runs-on }} • x64 ${{ matrix.args }}"
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+
+    - name: Basic GitHub action setup
+      uses: actions/checkout@v2
+
+    - name: Set conda environment "test"
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        mamba-version: "*"
+        channels: conda-forge,defaults
+        channel-priority: true
+        environment-file: environment.yaml
+        activate-environment: test
+        auto-activate-base: false
+
+    - name: Configure using CMake
+      run: cmake . -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
+
+    - name: Build tests & examples
+      run: cmake --build .
+
+    - name: Run tests & examples
+      run: ctest --output-on-failure

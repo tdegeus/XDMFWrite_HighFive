@@ -1,5 +1,5 @@
-[![Travis](https://travis-ci.org/tdegeus/XDMFWrite_HighFive.svg?branch=master)](https://travis-ci.org/tdegeus/XDMFWrite_HighFive)
-[![Appveyor](https://ci.appveyor.com/api/projects/status/oacto3abj9ttbr6i?svg=true)](https://ci.appveyor.com/project/tdegeus/xdmfwrite-highfive)
+[![CI](https://github.com/tdegeus/XDMFWrite_HighFive/workflows/CI/badge.svg)](https://github.com/tdegeus/XDMFWrite_HighFive/actions)
+[![Doxygen -> gh-pages](https://github.com/tdegeus/XDMFWrite_HighFive/workflows/gh-pages/badge.svg)](https://tdegeus.github.io/XDMFWrite_HighFive)
 
 # XDMFWrite_HighFive
 
