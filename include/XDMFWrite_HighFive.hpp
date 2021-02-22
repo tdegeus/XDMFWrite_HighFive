@@ -1,17 +1,41 @@
-/*
+/**
+XDMF meets HighFive: Write XDMF files to interpret HDF5 files.
+References:
 
-(c - GPLv3) T.W.J. de Geus (Tom) | tom@geus.me | www.geus.me | github.com/tdegeus/XDMFWrite_HighFive
+-   http://xdmf.org/index.php/XDMF_Model_and_Format
 
+\file XDMFWrite_HighFive.hpp
+\copyright Copyright 2020. Tom de Geus. All rights reserved.
+\license This project is released under the GNU Public License (GPLv3).
 */
 
 #ifndef XDMFWRITE_HIGHFIVE_H
 #define XDMFWRITE_HIGHFIVE_H
 
-// See: http://xdmf.org/index.php/XDMF_Model_and_Format
-
 #include <fstream>
 #include <highfive/H5Easy.hpp>
 
+#define Q(x) #x
+#define QUOTE(x) Q(x)
+
+/**
+All assertions are implementation as::
+
+    XDMFWRITE_HIGHFIVE_ASSERT(...)
+
+They can be enabled by::
+
+    #define XDMFWRITE_HIGHFIVE_ENABLE_ASSERT
+
+(before including XDMFWrite_HighFive).
+The advantage is that:
+
+-   File and line-number are displayed if the assertion fails.
+-   XDMFWrite_HighFive's assertions can be enabled/disabled independently
+    from those of other libraries.
+
+\throw std::runtime_error
+*/
 #ifdef XDMFWRITE_HIGHFIVE_ENABLE_ASSERT
     #define XDMFWRITE_HIGHFIVE_ASSERT(expr) XDMFWRITE_HIGHFIVE_ASSERT_IMPL(expr, __FILE__, __LINE__)
     #define XDMFWRITE_HIGHFIVE_ASSERT_IMPL(expr, file, line) \
@@ -24,16 +48,71 @@
     #define XDMFWRITE_HIGHFIVE_ASSERT(expr)
 #endif
 
-#define XDMFWRITE_HIGHFIVE_VERSION_MAJOR 0
-#define XDMFWRITE_HIGHFIVE_VERSION_MINOR 0
-#define XDMFWRITE_HIGHFIVE_VERSION_PATCH 1
+/**
+Assertion that cannot be switched of. Implement assertion by::
 
+    XDMFWRITE_HIGHFIVE_CHECK(...)
+
+\throw std::runtime_error
+*/
+#define XDMFWRITE_HIGHFIVE_CHECK(expr) XDMFWRITE_HIGHFIVE_CHECK_IMPL(expr, __FILE__, __LINE__)
+#define XDMFWRITE_HIGHFIVE_CHECK_IMPL(expr, file, line) \
+    if (!(expr)) { \
+        throw std::runtime_error( \
+            std::string(file) + ':' + std::to_string(line) + \
+            ": assertion failed (" #expr ") \n\t"); \
+    }
+
+/**
+Throw error::
+
+    XDMFWRITE_HIGHFIVE_THROW(...)
+
+\throw std::runtime_error
+*/
+#define XDMFWRITE_HIGHFIVE_THROW(message) XDMFWRITE_HIGHFIVE_THROW_IMPL(message, __FILE__, __LINE__)
+#define XDMFWRITE_HIGHFIVE_THROW_IMPL(message, file, line) \
+    std::runtime_error( \
+        std::string(file) + ':' + std::to_string(line) + \
+        ": " message " \n\t"); \
+
+/**
+Current version.
+
+Either:
+
+-   Configure using CMake at install time. Internally uses::
+
+        python -c "from setuptools_scm import get_version; print(get_version())"
+
+-   Define externally using::
+
+        -DXDMFWRITE_HIGHFIVE_VERSION="`python -c "from setuptools_scm import get_version; print(get_version())"`"
+
+    From the root of this project. This is what ``setup.py`` does.
+
+Note that both ``CMakeLists.txt`` and ``setup.py`` will construct the version string using
+``setuptools_scm`` **unless** an environment ``PKG_VERSION`` is defined.
+If ``PKG_VERSION`` is defined the version string will be read from that variable.
+*/
+#ifndef XDMFWRITE_HIGHFIVE_VERSION
+#define XDMFWRITE_HIGHFIVE_VERSION "@XDMFWRITE_HIGHFIVE_VERSION@"
+#endif
+
+/**
+Define the indentation level of the output.
+To change the default to e.g. 2::
+
+    #define XDMFWRITE_HIGHFIVE_INDENT 2
+
+**before** including XDMFWrite_HighFive.
+*/
 #ifndef XDMFWRITE_HIGHFIVE_INDENT
     #define XDMFWRITE_HIGHFIVE_INDENT 4
 #endif
 
-#ifndef XDMFWRITE_USE_GOOSEFEM
-    #ifdef GOOSEFEM_VERSION_MAJOR
+#ifndef XDMFWRITE_USE_XDMFWRITE_HIGHFIVE
+    #ifdef GOOSEFEM_VERSION
         #define XDMFWRITE_USE_GOOSEFEM
         #include <GooseFEM/Mesh.h>
     #endif
@@ -41,56 +120,75 @@
 
 namespace XDMFWrite_HighFive {
 
-// --- Overview ---
+/**
+Return version string, e.g.::
+
+    "0.8.0"
+
+\return std::string
+*/
+inline std::string version();
 
 /**
-* Returns a string in which the string elements of a sequence have been joined by a separator.
-* @param lines Sequence of strings.
-* @param sep Separator with which to join the lines.
-* @return String.
+Returns a string in which the string elements of a sequence have been joined by a separator.
+
+\param lines Sequence of strings.
+\param sep Separator with which to join the lines.
+\return String.
 */
 inline std::string join(const std::vector<std::string>& lines, const std::string& sep="\n");
 
 /**
-* Concatenate lists.
-* @param args Lists, specified as {...}.
-* @return Concatenated list.
+Concatenate lists.
+
+\param args Lists, specified as ``{...}``.
+\return Concatenated list.
 */
 template <class T>
 inline std::vector<T> concatenate(std::initializer_list<std::vector<T>> args);
 
 /**
-* Specify the ElementType for a certain Topology (a.k.a. connectivity).
+Specify the ElementType() for a certain Topology().
 */
 enum class ElementType {
-    Polyvertex,
-    Triangle,
-    Quadrilateral,
-    Hexahedron };
+    Polyvertex, ///< Polyvertex
+    Triangle, ///< Triangle
+    Quadrilateral, ///< Quadrilateral
+    Hexahedron ///< Hexahedron
+};
 
 /**
-* Specify the AttributeCenter of a field.
+Specify the AttributeCenter() of a field.
+See: https://www.xdmf.org/index.php/XDMF_Model_and_Format#Attribute
 */
 enum class AttributeCenter {
-    Cell,
-    Node };
+    Cell, ///< Cell.
+    Node ///< Node.
+};
 
 /**
-* Interpret a DataSet as a Geometry (a.k.a. nodal-coordinates or vertices).
-* @param file An open and readable HighFive file.
-* @param dataset Path to the DataSet.
-* @return Sequence of strings to be used in an XDMF-file.
+Interpret a DataSet as a Geometry().
+Other common terms for Geometry():
+-   Nodal coordinates.
+-   Vertices.
+
+\param file An open and readable HighFive file.
+\param dataset Path to the DataSet.
+\return Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Geometry(
     const HighFive::File& file,
     const std::string& dataset);
 
 /**
-* Interpret a DataSet as a Topology (a.k.a. connectivity).
-* @param file An open and readable HighFive file.
-* @param dataset Path to the DataSet.
-* @param type Element-type (see ElementType).
-* @return Sequence of strings to be used in an XDMF-file.
+Interpret a DataSet as a Topology().
+Other common terms for Topology():
+-   Connectivity.
+
+\param file An open and readable HighFive file.
+\param dataset Path to the DataSet.
+\param type Element-type (see ElementType).
+\return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Topology(
@@ -99,12 +197,16 @@ inline std::vector<std::string> Topology(
     const T& type);
 
 /**
-* Interpret a DataSet as an Attribute. By default the path of the DataSet is used as name in the
-* XDMF-file. An overload is available to specify a different name.
-* @param file An open and readable HighFive file.
-* @param dataset Path to the DataSet.
-* @param center How to center the Attribute (see AttributeCenter).
-* @return Sequence of strings to be used in an XDMF-file.
+Interpret a DataSet as an Attribute().
+See: https://www.xdmf.org/index.php/XDMF_Model_and_Format#Attribute
+
+By default the path of the DataSet is used as name in the XDMF-file.
+An overload is available to specify a different name.
+
+\param file An open and readable HighFive file.
+\param dataset Path to the DataSet.
+\param center How to center the Attribute (see AttributeCenter()).
+\return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Attribute(
@@ -113,12 +215,14 @@ inline std::vector<std::string> Attribute(
     const T& center);
 
 /**
-* Interpret a DataSet as an Attribute.
-* @param file An open and readable HighFive file.
-* @param dataset Path to the DataSet.
-* @param center How to center the Attribute (see AttributeCenter).
-* @param name Name to use in the XDMF-file.
-* @return Sequence of strings to be used in an XDMF-file.
+Interpret a DataSet as an Attribute().
+See: https://www.xdmf.org/index.php/XDMF_Model_and_Format#Attribute
+
+\param file An open and readable HighFive file.
+\param dataset Path to the DataSet.
+\param center How to center the Attribute (see AttributeCenter()).
+\param name Name to use in the XDMF-file.
+\return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Attribute(
@@ -128,50 +232,61 @@ inline std::vector<std::string> Attribute(
     const std::string &name);
 
 /**
-* Combine fields (e.g. Geometry, Topology, and Attribute) to a single grid.
-* @param name Name of the grid.
-* @param args The fields (themselves a sequence of strings) to write.
-* An arbitrary number of string sequences can be combined using {...}.
-* @return Sequence of strings to be used in an XDMF-file.
+Combine fields (Geometry(), Topology(), Attribute()) to a single grid.
+
+\param name
+    Name of the grid.
+
+\param args
+    The fields (themselves a sequence of strings) to write.
+    An arbitrary number of string sequences can be combined using ``{...}``.
+
+\return
+    Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Grid(
     const std::string& name,
     std::initializer_list<std::vector<std::string>> args);
 
 /**
-* Combine fields (e.g. Geometry, Topology, and Attribute) to a single grid.
-* An overload is available to specify the name.
-* @param args The fields (themselves a sequence of strings) to write.
-* An arbitrary number if string sequences can be combined using {...}.
-* @return Sequence of strings to be used in an XDMF-file.
+Combine fields (Geometry(), Topology(), Attribute()) to a single grid.
+An overload is available to specify the name.
+
+\param args
+    The fields (themselves a sequence of strings) to write.
+    An arbitrary number if string sequences can be combined using ``{...}``.
+
+\return Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Grid(
     std::initializer_list<std::vector<std::string>> args);
 
 /**
-* Combine a series of fields (e.g. Geometry, Topology, and Attribute) to a time-series.
+Combine a series of fields (e.g. Geometry(), Topology(), and Attribute) to a time-series.
 */
 class TimeSeries
 {
 public:
 
     /**
-    * Constructor.
-    * An overload is available to specify the name of the TimeSeries.
+    Constructor.
+    An overload is available to specify the name of the TimeSeries.
     */
     TimeSeries() = default;
 
     /**
-    * Constructor, allowing a custom name of the TimeSeries.
-    * @param name Name of the TimeSeries.
+    Constructor, allowing a custom name of the TimeSeries.
+
+    \param name Name of the TimeSeries.
     */
     TimeSeries(const std::string& name);
 
     /**
-    * Add a time-step given by a combination of fields (e.g. Geometry, Topology, and Attribute).
-    * @param name Name of the increment.
-    * @param time Time value of the increment.
-    * @param args The fields (themselves a sequence of strings) to write.
+    Add a time-step given by a combination of fields (e.g. Geometry(), Topology(), and Attribute()).
+
+    \param name Name of the increment.
+    \param time Time value of the increment.
+    \param args The fields (themselves a sequence of strings) to write.
     * An arbitrary number if string sequences can be combined using {...}.
     */
     template <class T>
@@ -181,11 +296,15 @@ public:
         std::initializer_list<std::vector<std::string>> args);
 
     /**
-    * Add a time-step given by a combination of fields (e.g. Geometry, Topology, and Attribute).
-    * An overload is available to specify the time and name of the increment.
-    * @param time Time value of the increment.
-    * @param args The fields (themselves a sequence of strings) to write.
-    * An arbitrary number if string sequences can be combined using {...}.
+    Add a time-step given by a combination of fields (e.g. Geometry(), Topology(), and Attribute()).
+    An overload is available to specify the time and name of the increment.
+
+    \param time
+        Time value of the increment.
+
+    \param args
+        The fields (themselves a sequence of strings) to write.
+        An arbitrary number if string sequences can be combined using ``{...}``.
     */
     template <class T>
     inline void push_back(
@@ -193,19 +312,24 @@ public:
         std::initializer_list<std::vector<std::string>> args);
 
     /**
-    * Add a time-step given by a combination of fields (e.g. Geometry, Topology, and Attribute).
-    * An overload is available to specify the time and name of the increment.
-    * @param args The fields (themselves a sequence of strings) to write.
-    * An arbitrary number if string sequences can be combined using {...}.
-    * @return Sequence of strings to be used in an XDMF-file.
+    Add a time-step given by a combination of fields (e.g. Geometry(), Topology(), and Attribute()).
+    An overload is available to specify the time and name of the increment.
+
+    \param args
+        The fields (themselves a sequence of strings) to write.
+        An arbitrary number if string sequences can be combined using ``{...}``.
+
+    \return
+        Sequence of strings to be used in an XDMF-file.
     */
     inline void push_back(
         std::initializer_list<std::vector<std::string>> args);
 
 
     /**
-    * Get sequence of strings to be used in an XDMF-file.
-    * @return Sequence of strings to be used in an XDMF-file.
+    Get sequence of strings to be used in an XDMF-file.
+
+    \return Sequence of strings to be used in an XDMF-file.
     */
     inline std::vector<std::string> get() const;
 
@@ -216,13 +340,16 @@ private:
 };
 
 /**
-* Interpret a DataSets as a Structured (individual points). This is simply short for the
-* concatenation of `Geometry(file, "/coor")` and
-* `Topology(file, "/conn", ElementType::Polyvertex)`.
-* @param file An open and readable HighFive file.
-* @param dataset_geometry Path to the Geometry DataSet.
-* @param dataset_topology Path to a mock Topology arange(N), with N the number of nodes (vertices).
-* @return Sequence of strings to be used in an XDMF-file.
+Interpret a DataSets as a Structured (individual points). This is simply short for the
+concatenation of:
+
+-   ``Geometry(file, "/coor")`` and
+-   ``Topology(file, "/conn", ElementType::Polyvertex)``.
+
+\param file An open and readable HighFive file.
+\param dataset_geometry Path to the Geometry() DataSet.
+\param dataset_topology Path to a mock Topology() arange(N), with N the number of nodes (vertices).
+\return Sequence of strings to be used in an XDMF-file.
 */
 inline std::vector<std::string> Structured(
     const HighFive::File& file,
@@ -230,15 +357,17 @@ inline std::vector<std::string> Structured(
     const std::string& dataset_topology);
 
 /**
-* Interpret a DataSets as a Unstructured
-* (Geometry and Topology / nodal-coordinates and connectivity). This is simply short for the
-* concatenation of `Geometry(file, "/coor")` and
-* `Topology(file, "/conn", type)`.
-* @param file An open and readable HighFive file.
-* @param dataset_geometry Path to the Geometry DataSet.
-* @param dataset_topology Path to the Topology DataSet.
-* @param type Element-type (see ElementType).
-* @return Sequence of strings to be used in an XDMF-file.
+Interpret a DataSets as a Unstructured
+(Geometry() and Topology() / nodal-coordinates and connectivity). This is simply short for the
+concatenation of
+-   ``Geometry(file, "/coor")`` and
+-   ``Topology(file, "/conn", type)``.
+
+\param file An open and readable HighFive file.
+\param dataset_geometry Path to the Geometry() DataSet.
+\param dataset_topology Path to the Topology() DataSet.
+\param type Element-type (see ElementType()).
+\return Sequence of strings to be used in an XDMF-file.
 */
 template <class T>
 inline std::vector<std::string> Unstructured(
@@ -248,23 +377,41 @@ inline std::vector<std::string> Unstructured(
     const T& type);
 
 /**
-* Get a complete XDMF-file, e.g. from Grid or TimeSeries.
-* @param arg The data (any of the XDMFWrite_HighFive-classes or a sequence of strings) to write.
-* @return XDMF-file as string.
+Get a complete XDMF-file, e.g. from Grid() or TimeSeries().
+
+\param arg The data (any of the XDMFWrite_HighFive-classes or a sequence of strings) to write.
+\return XDMF-file as string.
 */
 template <class T>
 inline std::string write(const T& arg);
 
 /**
-* Write a complete XDMF-file, e.g. from Grid or TimeSeries.
-* @param filename The filename to write to (file is overwritten).
-* @param arg The data (any of the XDMFWrite_HighFive-classes or a sequence of strings) to write.
-* @return XDMF-file as string.
+Write a complete XDMF-file, e.g. from Grid() or TimeSeries().
+
+\param filename The filename to write to (file is overwritten).
+\param arg The data (any of the XDMFWrite_HighFive-classes or a sequence of strings) to write.
+\return XDMF-file as string.
 */
 template <class T>
 inline std::string write(const std::string& filename, const T& arg);
 
 // --- Implementation ---
+
+namespace detail {
+
+    inline std::string unquote(const std::string& arg)
+    {
+        std::string ret = arg;
+        ret.erase(std::remove(ret.begin(), ret.end(), '\"'), ret.end());
+        return ret;
+    }
+
+}
+
+inline std::string version()
+{
+    return detail::unquote(std::string(QUOTE(XDMFWRITE_HIGHFIVE_VERSION)));
+}
 
 namespace detail {
 
@@ -361,7 +508,7 @@ namespace detail {
             else if (arg == ElementType::Hexahedron) {
                 return "Hexahedron";
             }
-            throw std::runtime_error("Unknown ElementType");
+            throw XDMFWRITE_HIGHFIVE_THROW("Unknown ElementType");
         }
     };
 
@@ -380,7 +527,7 @@ namespace detail {
             else if (arg == GooseFEM::Mesh::ElementType::Hex8) {
                 return "Hexahedron";
             }
-            throw std::runtime_error("Unknown ElementType");
+            throw XDMFWRITE_HIGHFIVE_THROW("Unknown ElementType");
         }
     };
     #endif
@@ -396,7 +543,7 @@ namespace detail {
             else if (arg == AttributeCenter::Node) {
                 return "Node";
             }
-            throw std::runtime_error("Unknown AttributeType");
+            throw XDMFWRITE_HIGHFIVE_THROW("Unknown AttributeType");
         }
     };
 
@@ -565,7 +712,7 @@ inline std::vector<std::string> Geometry(
         ret.push_back("<Geometry GeometryType=\"XYZ\">");
     }
     else {
-        throw std::runtime_error("Illegal number of dimensions.");
+        throw XDMFWRITE_HIGHFIVE_THROW("Illegal number of dimensions.");
     }
 
     ret.push_back(
@@ -653,7 +800,7 @@ inline std::vector<std::string> Attribute(
         t = "Vector";
     }
     else {
-        throw std::runtime_error("Type of data cannot be deduced");
+        throw XDMFWRITE_HIGHFIVE_THROW("Type of data cannot be deduced");
     }
 
     ret.push_back(

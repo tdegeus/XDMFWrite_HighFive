@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+dependencies:
+  - highfive
+  - goosefem
+  - xtensor
+  - cmake
+  - setuptools_scm
+  - catch2

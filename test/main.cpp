@@ -3,3 +3,14 @@
 #include <catch2/catch.hpp>
 #include <XDMFWrite_HighFive.hpp>
 
+TEST_CASE("XDMFWrite_HighFive", "Basic")
+{
+
+    SECTION("version")
+    {
+        std::cout << XDMFWrite_HighFive::version() << std::endl;
+    }
+
+}
+
+

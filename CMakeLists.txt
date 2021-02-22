@@ -15,20 +15,17 @@ option(BUILD_EXAMPLES "Build examples" OFF)
 # Version
 # =======
 
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/include/XDMFWrite_HighFive.hpp" XDMFWrite_HighFive_version_defines
-     REGEX "#define XDMFWRITE_HIGHFIVE_VERSION_(MAJOR|MINOR|PATCH)")
+IF(DEFINED ENV{PKG_VERSION})
+    set(XDMFWRITE_HIGHFIVE_VERSION $ENV{PKG_VERSION})
+else()
+    execute_process(
+        COMMAND python -c "from setuptools_scm import get_version; print(get_version())"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE XDMFWRITE_HIGHFIVE_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
-foreach(ver ${XDMFWrite_HighFive_version_defines})
-    if(ver MATCHES "#define XDMFWRITE_HIGHFIVE_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
-        set(XDMFWRITE_HIGHFIVE_VERSION_${CMAKE_MATCH_1}
-            "${CMAKE_MATCH_2}"
-            CACHE INTERNAL "")
-    endif()
-endforeach()
-
-set(XDMFWRITE_HIGHFIVE_VERSION ${XDMFWRITE_HIGHFIVE_VERSION_MAJOR}.${XDMFWRITE_HIGHFIVE_VERSION_MINOR}.${XDMFWRITE_HIGHFIVE_VERSION_PATCH})
-
-message(STATUS "Building XDMFWrite_HighFive v${XDMFWRITE_HIGHFIVE_VERSION}")
+message(STATUS "Building ${PROJECT_NAME} ${XDMFWRITE_HIGHFIVE_VERSION}")
 
 # Set target
 # ==========
@@ -52,6 +49,13 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION include)
+
+configure_file("include/XDMFWrite_HighFive.hpp"
+               "${CMAKE_CURRENT_BINARY_DIR}/XDMFWrite_HighFive.hpp"
+                @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/XDMFWrite_HighFive.hpp"
+        DESTINATION "include/")
 
 install(TARGETS XDMFWrite_HighFive EXPORT XDMFWrite_HighFive-targets)
 
@@ -84,10 +88,14 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/XDMFWrite_HighFive.pc"
 
 include("XDMFWrite_HighFiveConfig.cmake")
 
+include(CTest)
+
 if(BUILD_TESTS)
+    enable_testing()
     add_subdirectory(test)
 endif()
 
 if(BUILD_EXAMPLES)
+    enable_testing()
     add_subdirectory(docs/examples)
 endif()
