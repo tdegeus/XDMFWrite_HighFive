@@ -6,6 +6,7 @@ function(compile_example exemple_source)
 
     add_executable(${example_name} ${exemple_source})
 
+
     target_link_libraries(${example_name} PRIVATE
         XDMFWrite_HighFive
         XDMFWrite_HighFive::compiler_warnings
