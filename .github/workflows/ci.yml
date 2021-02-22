@@ -41,10 +41,19 @@ jobs:
         auto-activate-base: false
 
     - name: Configure using CMake
-      run: cmake . -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
+      if: runner.os != 'Windows'
+      run: cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_CONFIGURATION_TYPES=Release
+
+    - name: Configure using CMake
+      if: runner.os == 'Windows'
+      run: |
+        conda install -c conda-forge clang_win-64 ninja
+        cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
     - name: Build tests & examples
+      working-directory: build
       run: cmake --build .
 
     - name: Run tests & examples
-      run: ctest --output-on-failure
+      working-directory: build
+      run: ctest -C Debug --output-on-failure
