@@ -1,5 +1,6 @@
 [![CI](https://github.com/tdegeus/XDMFWrite_HighFive/workflows/CI/badge.svg)](https://github.com/tdegeus/XDMFWrite_HighFive/actions)
 [![Doxygen -> gh-pages](https://github.com/tdegeus/XDMFWrite_HighFive/workflows/gh-pages/badge.svg)](https://tdegeus.github.io/XDMFWrite_HighFive)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/XDMFWrite_HighFive.svg)](https://anaconda.org/conda-forge/XDMFWrite_HighFive)
 
 # XDMFWrite_HighFive
 
