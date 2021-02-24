@@ -6,6 +6,7 @@
 
 <!-- MarkdownTOC -->
 
+- [Getting started](#getting-started)
 - [Fields](#fields)
     - [Geometry \(nodal-coordinates or vertices\)](#geometry-nodal-coordinates-or-vertices)
     - [Topology \(connectivity\)](#topology-connectivity)
@@ -25,7 +26,14 @@
 
 <!-- /MarkdownTOC -->
 
+## Getting started
+
 XDMF meets HighFive: Write XDMF files to interpret HDF5 files.
+
+To get started consider the [examples](./docs/examples):
+
+-   [grid_structured](./docs/examples/grid_structured.cpp)
+-   [grid_unstructured](./docs/examples/grid_unstructured.cpp)
 
 ## Fields
 
