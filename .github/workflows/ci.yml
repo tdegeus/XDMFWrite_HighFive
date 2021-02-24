@@ -34,6 +34,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: environment.yaml
+        environment-name: myenv
 
     # - name: Set conda environment "test"
     #   uses: conda-incubator/setup-miniconda@v2
