@@ -96,7 +96,7 @@ Note that both ``CMakeLists.txt`` and ``setup.py`` will construct the version st
 If ``PKG_VERSION`` is defined the version string will be read from that variable.
 */
 #ifndef XDMFWRITE_HIGHFIVE_VERSION
-#define XDMFWRITE_HIGHFIVE_VERSION "@XDMFWRITE_HIGHFIVE_VERSION@"
+#define XDMFWRITE_HIGHFIVE_VERSION "@PROJECT_VERSION@"
 #endif
 
 /**
@@ -620,6 +620,9 @@ namespace detail {
     inline std::string indent()
     {
         std::string ret = "";
+        if (XDMFWRITE_HIGHFIVE_INDENT == 0) {
+            return ret;
+        }
         for (size_t i = 0; i < XDMFWRITE_HIGHFIVE_INDENT; ++i) {
             ret += " ";
         }

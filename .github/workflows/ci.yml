@@ -12,15 +12,13 @@ jobs:
   standard:
 
     strategy:
-
       fail-fast: false
-
       matrix:
         runs-on: [ubuntu-latest, macos-latest, windows-latest]
 
-    # defaults:
-    #   run:
-    #     shell: bash -l {0}
+    defaults:
+      run:
+        shell: bash -l {0}
 
     name: "${{ matrix.runs-on }} • x64 ${{ matrix.args }}"
     runs-on: ${{ matrix.runs-on }}
@@ -30,34 +28,24 @@ jobs:
     - name: Basic GitHub action setup
       uses: actions/checkout@v2
 
-    - name: Set conda environment (using micromamba for speed)
-      # if: runner.os != 'Windows'
+    - name: Set conda environment
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: environment.yaml
         environment-name: myenv
 
-    # - name: Set conda environment (using miniconda)
-    #   if: runner.os == 'Windows'
-    #   uses: conda-incubator/setup-miniconda@v2
-    #   with:
-    #     mamba-version: "*"
-    #     channels: conda-forge,defaults
-    #     channel-priority: true
-    #     environment-file: environment.yaml
-    #     activate-environment: myenv
-    #     auto-activate-base: false
+    - name: Set dummy version
+      run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=ci" >> $GITHUB_ENV
 
-    - name: Configure using CMake
+    - name: Configure using CMake (!Windows)
       if: runner.os != 'Windows'
-      run: |
-        cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
+      run: cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Configure using CMake
       if: runner.os == 'Windows'
       run: |
         micromamba install -c conda-forge clang_win-64 ninja
-        cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+        cmake -Bbuild -G Ninja -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
     - name: Build tests & examples
       working-directory: build
@@ -65,4 +53,4 @@ jobs:
 
     - name: Run tests & examples
       working-directory: build
-      run: ctest -C Debug --output-on-failure
+      run: ctest --output-on-failure

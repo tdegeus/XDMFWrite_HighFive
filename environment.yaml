@@ -7,3 +7,4 @@ dependencies:
   - cmake
   - setuptools_scm
   - catch2
+  - doxygen
