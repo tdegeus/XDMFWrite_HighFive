@@ -38,14 +38,7 @@ jobs:
       run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=ci" >> $GITHUB_ENV
 
     - name: Configure using CMake (!Windows)
-      if: runner.os != 'Windows'
-      run: cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
-
-    - name: Configure using CMake
-      if: runner.os == 'Windows'
-      run: |
-        micromamba install -c conda-forge clang_win-64 ninja
-        cmake -Bbuild -G Ninja -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      run: cmake -Bbuild -G Ninja -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Build tests & examples
       working-directory: build
