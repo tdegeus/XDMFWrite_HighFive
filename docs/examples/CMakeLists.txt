@@ -6,8 +6,11 @@ function(compile_example exemple_source)
 
     add_executable(${example_name} ${exemple_source})
 
+    set(HIGHFIVE_USE_BOOST 0)
+    find_package(HighFive REQUIRED)
 
     target_link_libraries(${example_name} PRIVATE
+        HighFive
         XDMFWrite_HighFive
         XDMFWrite_HighFive::compiler_warnings
         XDMFWrite_HighFive::assert)
