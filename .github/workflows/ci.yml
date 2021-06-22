@@ -41,11 +41,11 @@ jobs:
       run: micromamba install -c conda-forge c-compiler cxx-compiler
 
     - name: Configure using CMake
-      if: runner.os != "Windows"
+      if: runner.os != 'Windows'
       run: cmake -Bbuild -G Ninja -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Configure using CMake
-      if: runner.os == "Windows"
+      if: runner.os == 'Windows'
       run: cmake -Bbuild -G "Visual Studio 16 2019" -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Build tests & examples
