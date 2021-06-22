@@ -54,4 +54,10 @@ jobs:
 
     - name: Run tests & examples
       working-directory: build
-      run: ctest -C Release --output-on-failure
+      if: runner.os != 'Windows'
+      run: ctest --output-on-failure
+
+    - name: Run tests & examples
+      working-directory: build
+      if: runner.os == 'Windows'
+      run: ctest -C Debug --output-on-failure
