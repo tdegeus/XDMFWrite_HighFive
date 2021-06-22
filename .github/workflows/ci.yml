@@ -12,9 +12,7 @@ jobs:
   standard:
 
     strategy:
-
       fail-fast: false
-
       matrix:
         runs-on: [ubuntu-latest, macos-latest, windows-latest]
 
@@ -30,25 +28,25 @@ jobs:
     - name: Basic GitHub action setup
       uses: actions/checkout@v2
 
-    - name: Set conda environment "test"
-      uses: conda-incubator/setup-miniconda@v2
+    - name: Set conda environment
+      uses: mamba-org/provision-with-micromamba@main
       with:
-        mamba-version: "*"
-        channels: conda-forge,defaults
-        channel-priority: true
         environment-file: environment.yaml
-        activate-environment: test
-        auto-activate-base: false
+        environment-name: myenv
+
+    - name: Set dummy version
+      run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=ci" >> $GITHUB_ENV
+
+    - name: Switching to conda-forge compilers
+      run: micromamba install -c conda-forge c-compiler cxx-compiler
 
     - name: Configure using CMake
       if: runner.os != 'Windows'
-      run: cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_CONFIGURATION_TYPES=Release
+      run: cmake -Bbuild -G Ninja -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Configure using CMake
       if: runner.os == 'Windows'
-      run: |
-        conda install -c conda-forge clang_win-64 ninja
-        cmake -Bbuild -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      run: cmake -Bbuild -G "Visual Studio 16 2019" -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Build tests & examples
       working-directory: build
@@ -56,4 +54,10 @@ jobs:
 
     - name: Run tests & examples
       working-directory: build
+      if: runner.os != 'Windows'
+      run: ctest --output-on-failure
+
+    - name: Run tests & examples
+      working-directory: build
+      if: runner.os == 'Windows'
       run: ctest -C Debug --output-on-failure

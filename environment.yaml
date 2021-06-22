@@ -5,5 +5,7 @@ dependencies:
   - goosefem
   - xtensor
   - cmake
+  - ninja
   - setuptools_scm
   - catch2
+  - doxygen

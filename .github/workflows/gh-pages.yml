@@ -19,27 +19,28 @@ jobs:
 
     - name: Basic GitHub action setup
       uses: actions/checkout@v2
-
-    - name: Set conda environment "test"
-      uses: conda-incubator/setup-miniconda@v2
       with:
-        mamba-version: "*"
-        channels: conda-forge,defaults
-        channel-priority: true
-        environment-file: docs/environment.yaml
-        activate-environment: test
-        auto-activate-base: false
+        fetch-depth: 0
 
-    - name: Run doxygen
-      working-directory: docs
-      run: doxygen
+    - name: Set conda environment (using micromamba for speed)
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: environment.yaml
+        environment-name: myenv
+
+    - name: Configure using CMake
+      run: cmake -Bbuild -DBUILD_DOCS=1
+
+    - name: Build the docs
+      working-directory: build
+      run: make docs
 
     - name: Deploy to GitHub Pages
       if: success()
       uses: crazy-max/ghaction-github-pages@v2
       with:
         target_branch: gh-pages
-        build_dir: docs/html
+        build_dir: build/html
         jekyll: false
         keep_history: false
       env:
