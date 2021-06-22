@@ -37,7 +37,10 @@ jobs:
     - name: Set dummy version
       run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=ci" >> $GITHUB_ENV
 
-    - name: Configure using CMake (!Windows)
+    - name: Switching to conda-forge compilers
+      run: micromamba install -c conda-forge c-compiler cxx-compiler
+
+    - name: Configure using CMake
       run: cmake -Bbuild -G Ninja -DBUILD_TESTS=1 -DBUILD_EXAMPLES=1
 
     - name: Build tests & examples
